@@ -40,7 +40,7 @@ services:
       MYSQL_PASSWORD: password
       MYSQL_USER: gespriority
     volumes:
-      - dbdata:/var/lib/mysql
+      - ${HOME}/data/mysql:/var/lib/mysql
     ports:
       - "3306:3306"
     networks:
