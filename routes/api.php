@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Http\Controllers\SanctumAuthUserController;
+use App\Http\Controllers\PasswordResetController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -9,16 +11,23 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::post('/tokens/create', function (Request $request) {
-    // Forçar debug aqui
+// Authentication routes
+Route::middleware(['throttle:5,1'])->group(function () {
+    Route::post('/auth/login', [SanctumAuthUserController::class, 'login']);
+});
 
-    //$user = User::where('email', $request->email);
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+    Route::post('/auth/logout', [SanctumAuthUserController::class, 'logout']);
+    Route::post('/auth/logout-all', [SanctumAuthUserController::class, 'logoutAll']);
+});
 
-    $auth = Auth::attempt(['email' => $request->email, 'password' => $request->password]);
+// Password reset routes
+Route::middleware(['throttle:3,1'])->group(function () {
+    Route::post('/auth/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+    Route::post('/auth/reset-password', [PasswordResetController::class, 'resetPassword']);
+});
 
-    $userToken = $request->user()->createToken('token-api');
-
-    return response()->json([
-        'access_token' => $userToken->plainTextToken,
-    ]);
+// Token verification (less restrictive throttle)
+Route::middleware(['throttle:10,1'])->group(function () {
+    Route::get('/auth/verify-reset-token/{token}/{email}', [PasswordResetController::class, 'verifyToken']);
 });
