@@ -26,6 +26,24 @@ class SanctumAuthUserController extends Controller
         ]);
 
         if (!$login) {
+            $user = User::where('email', $request->email)->first();
+
+            if ($user) {
+
+                if ($user->blocked) {
+                    return response()->json([
+                        'message' => 'Blocked user'
+                    ], 401);
+                }
+
+                $user->wrong_attempts++;
+                $blocked = $user->wrong_attempts > 2 ?? true;
+                if ($blocked) {
+                    $user->update(['blocked' => $blocked]);
+                }
+                $user->save();
+            }
+
             return response()->json([
                 'message' => 'Invalid credentials'
             ], 401);
